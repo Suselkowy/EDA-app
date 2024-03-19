@@ -10,6 +10,9 @@ def main():
     # Upload CSV file
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
+    if 'current_page' not in st.session_state:
+        st.session_state['current_page'] = 'main'
+
     if uploaded_file is not None:
         # Load CSV data into a DataFrame
         df = pd.read_csv(uploaded_file)
@@ -26,9 +29,12 @@ def main():
             if new_dtype != df.dtypes[col]:
                 new_df[col] = df[col].astype(new_dtype)
 
-        if st.button("Go to Data Analysis"):
-            st.session_state['current_df'] = new_df
+        def click():
             st.session_state['current_page'] = 'data_wrangling'
+            st.session_state['current_df'] = new_df
+
+        st.button("Go to Data Analysis", on_click=click)
+
 
 
 def generate_statistics(df, selected_variables):
@@ -85,7 +91,7 @@ def generate_1d_plots(df, selected_variables, graph_type):
                 st.plotly_chart(fig)
 
 
-def generate_statistics(df, selected_variable):
+def generate_empty(df, selected_variable):
     empty_values_count = df[selected_variable].isnull().sum()
     return empty_values_count
 
@@ -129,12 +135,12 @@ def data_wrangling():
             all_variables = df.columns.tolist()
 
 
-    selected_variable_fill = st.selectbox(f"Select variable which Statistic to generate", options=all_variables,
+    selected_variable_fill = st.selectbox(f"Select variable to replace empty", options=all_variables,
                                           index=None, placeholder="Select variable")
 
     if selected_variable_fill is not None:
         # Display number of empty values for selected variable
-        empty_values_count = generate_statistics(df, selected_variable_fill)
+        empty_values_count = generate_empty(df, selected_variable_fill)
         st.write(f"Number of empty values for {selected_variable_fill}: {empty_values_count}")
         method = st.selectbox("Select method to replace empty values:",
                               ["Mean", "Median", "Most Frequent", "Zero", "Custom Value"], index=None,
