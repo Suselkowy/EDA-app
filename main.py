@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+options = ['int64', 'float64', 'object', 'datetime64[ns]']
+
 
 def main():
     st.title("CSV File Viewer")
-    options = ['int64', 'float64', 'object', 'datetime64[ns]']
     st.session_state['edited'] = False
     # Upload CSV file
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
@@ -31,10 +32,10 @@ def main():
 
         def click():
             st.session_state['current_page'] = 'data_wrangling'
-            st.session_state['current_df'] = new_df
+            st.session_state['primary_df'] = new_df
+            st.session_state['edited'] = False
 
         st.button("Go to Data Analysis", on_click=click)
-
 
 
 def generate_statistics(df, selected_variables):
@@ -114,24 +115,30 @@ def replace_empty_values(df, selected_variable, method):
 
 
 def data_wrangling():
+
+    def change_edited_state(state: bool):
+        st.session_state['edited'] = state
+
     st.write("Data Wrangling")
     if not st.session_state['edited']:
-        df = st.session_state['current_df']
+        df = st.session_state['primary_df']
+        all_variables = df.columns.tolist()
     else:
         df = st.session_state['edited_df']
+        all_variables = df.columns.tolist()
 
-    all_variables = df.columns.tolist()
+    st.write(st.session_state['edited'])
 
     selected_variable = st.selectbox("Select variable to change:", df.columns,
-                                     index=None, placeholder="Select variable to change it name")
+                                     index=None, placeholder="Select variable to change it name", key='selected_variable')
 
     if selected_variable:
         changed_value = st.text_input(f"Rename '{selected_variable}' to:", value=selected_variable)
         if changed_value != selected_variable:
             df_editable = df.rename(columns={selected_variable: changed_value})
-            st.session_state['edited'] = True
+            st.session_state['primary_df'] = df_editable
             st.session_state['edited_df'] = df_editable
-            df = df_editable
+            df = st.session_state['primary_df']
             all_variables = df.columns.tolist()
 
 
@@ -139,31 +146,19 @@ def data_wrangling():
                                           index=None, placeholder="Select variable")
 
     if selected_variable_fill is not None:
-        # Display number of empty values for selected variable
         empty_values_count = generate_empty(df, selected_variable_fill)
         st.write(f"Number of empty values for {selected_variable_fill}: {empty_values_count}")
         method = st.selectbox("Select method to replace empty values:",
                               ["Mean", "Median", "Most Frequent", "Zero", "Custom Value"], index=None,
                               placeholder="Select method")
 
-        if method != "Custom Value":
-            if st.button("Replace Empty Values"):
-                df = replace_empty_values(df, selected_variable_fill, method)
-                st.write("### Data after replacing empty values")
-                st.write(df.head())
-
-        else:
+        if st.button("Replace Empty Values"):
             df = replace_empty_values(df, selected_variable_fill, method)
+            st.session_state['edited'] = True
+            st.session_state['edited_df'] = df
 
-            # Save updated DataFrame
-        if st.button("Save Updated Data"):
-            with st.spinner("Saving updated data to CSV..."):
-                df.to_csv("updated_data.csv", index=False)
-            st.success("Updated data saved successfully!")
+        st.button("Reset", on_click=change_edited_state, args=[False])
 
-            # Reset button to reset all variables to primary values
-        if st.button("Reset"):
-            df = st.session_state['edited_df']
 
     st.write("### 1D Statistics")
     select_all = st.button("Select All")
