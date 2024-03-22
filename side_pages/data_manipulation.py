@@ -47,6 +47,11 @@ def data_wrangling():
         df = replace_empty_values(data, selected_variable_fill, method)
         st.session_state['edited'] = True
 
+    def replace_values(df, selected_variable, method):
+        df = replace_empty_values(df, selected_variable, method)
+        set_edit(df)
+        del st.session_state['empty_selected']
+
     st.data_editor(df)
 
     st.write(st.session_state['edited'])
@@ -64,7 +69,7 @@ def data_wrangling():
             st.experimental_rerun()
 
     selected_variable_fill = st.selectbox(f"Select variable to replace empty", options=all_variables,
-                                          index=None, placeholder="Select variable")
+                                          index=None, placeholder="Select variable", key="empty_selected")
 
     if selected_variable_fill is not None:
         empty_values_count = generate_empty(df, selected_variable_fill)
@@ -73,7 +78,7 @@ def data_wrangling():
                               ["Mean", "Median", "Most Frequent", "Zero", "Custom Value"], index=None,
                               placeholder="Select method")
 
-        st.button("Replace Empty Values", on_click=set_edit, args=[df4])
+        st.button("Replace Empty Values", on_click=replace_values, args=[df, selected_variable_fill, method])
 
         st.button("Reset", on_click=change_edited_state, args=[False])
 

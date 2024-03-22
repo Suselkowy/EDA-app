@@ -13,6 +13,10 @@ show_pages(
     ]
 )
 
+def show_side_panel():
+    side_bar = st.sidebar
+    side_bar.button("Data Manipulation", on_click=switch_page, args=["data_manipulation"])
+    side_bar.button("Statistics", on_click=switch_page, args=["statistics"])
 
 def switch_page(page: str):
     st.session_state['page'] = page
@@ -21,12 +25,8 @@ def switch_page(page: str):
 if st.session_state['page'] == "loading":
     main()
 elif st.session_state['page'] == "data_manipulation":
-    side_bar = st.sidebar
-    side_bar.button("Data Manipulation", on_click=switch_page, args=["data_manipulation"])
-    side_bar.button("Statistics", on_click=switch_page, args=["statistics"])
+    show_side_panel()
     data_wrangling()
 elif st.session_state['page'] == "statistics":
-    side_bar = st.sidebar
-    side_bar.button("Data Manipulation", on_click=switch_page, args=["data_manipulation"])
-    side_bar.button("Statistics", on_click=switch_page, args=["statistics"])
+    show_side_panel()
     statistics()
