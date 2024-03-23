@@ -1,3 +1,4 @@
 .idea
 venv
 side_pages/__pycache__
+movies.csv
