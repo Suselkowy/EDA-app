@@ -119,9 +119,12 @@ def statistics():
         st.write(stats_df)
 
         if st.button("Save Statistics to CSV"):
-            with st.spinner("Saving statistics to CSV..."):
-                stats_df.to_csv("statistics.csv", index=True)
-            st.success("Statistics saved successfully!")
+            filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
+            stats_df.to_csv(filename, index=False)
+            with open(filename, 'rb') as f:
+                file_contents = f.read()
+            st.download_button(label='Click to download CSV file', data=file_contents, file_name=filename,
+                               mime='text/csv')
 
     st.write("### 1D plots")
 
