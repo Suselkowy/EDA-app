@@ -1,32 +1,45 @@
 import streamlit as st
-import plotly as px
+import plotly.express as px
 import pandas as pd
+
 
 def generate_statistics(df, selected_variables):
     statistics = {}
+    num = 1
 
     for var in selected_variables:
         if df[var].dtype == 'int64' or df[var].dtype == 'float64':
-            statistics[var] = {
+            statistics[num] = {
+                'Variable': var,
                 'Mean': df[var].mean(),
                 'Median': df[var].median(),
                 'Std Dev': df[var].std(),
                 'Min': df[var].min(),
                 'Max': df[var].max(),
             }
+            num += 1
         elif df[var].dtype == 'object':
-            statistics[var] = {
-                'Unique Values': df[var].nunique(),
-                'Most Common Value': df[var].mode()[0],
-                'Frequency': df[var].value_counts().max(),
-            }
+            unique_values = df[var].value_counts()
+            total_count = len(df[var])
+            for value, count in unique_values.items():
+                stats = {
+                    'Variable': var,
+                    'Value': value,
+                    'Count': count,
+                    'Count Percentage': (count / total_count) * 100
+                }
+                statistics[num] = stats
+                num += 1
         elif df[var].dtype == 'datetime64[ns]':
-            statistics[var] = {
+            statistics[num] = {
+                'Variable': var,
                 'Earliest Date': df[var].min(),
                 'Latest Date': df[var].max(),
             }
+            num += 1
 
-    return pd.DataFrame(statistics).transpose()
+    statistics_df = pd.DataFrame(statistics).transpose()
+    return statistics_df
 
 
 def generate_1d_plots(df, selected_variables, graph_type):
@@ -55,6 +68,7 @@ def generate_1d_plots(df, selected_variables, graph_type):
                              title=f"{var} Pie Chart")
                 st.plotly_chart(fig)
 
+
 def statistics():
     if not st.session_state['edited']:
         print("df changed to primary")
@@ -64,7 +78,6 @@ def statistics():
         print("df changed to edited")
         df = st.session_state['edited_df']
         all_variables = df.columns.tolist()
-
 
     st.write("### 1D Statistics")
     select_all = st.button("Select All")
