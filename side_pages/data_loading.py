@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-options = ['int64', 'float64', 'object', 'datetime64[ns]']
+options = ['int64', 'float64', 'object', 'datetime64[ns]', 'Delete']
 
 def main():
     st.title("CSV File Viewer")
@@ -21,13 +21,16 @@ def main():
         st.write("### Raw Data")
         st.write(df)
 
-        new_df = df
+        new_df = df.copy()
 
         for col in df.columns:
             new_dtype = st.selectbox(f"Select data type for column '{col}'", options=options,
                                      index=options.index(f'{df.dtypes[col]}'))
             if new_dtype != df.dtypes[col]:
-                new_df[col] = df[col].astype(new_dtype)
+                if new_dtype != 'Delete':
+                    new_df[col] = df[col].astype(new_dtype)
+                else:
+                    new_df = new_df.drop([col], axis=1)
 
         def click():
             st.session_state['primary_df'] = new_df
