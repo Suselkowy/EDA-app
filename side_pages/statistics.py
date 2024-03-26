@@ -71,21 +71,44 @@ def generate_1d_plots(df, selected_variables, graph_type):
 
 def statistics():
     if not st.session_state['edited']:
-        print("df changed to primary")
         df = st.session_state['primary_df']
-        all_variables = df.columns.tolist()
     else:
         print("df changed to edited")
         df = st.session_state['edited_df']
-        all_variables = df.columns.tolist()
+    all_variables = df.columns.tolist()
+    all_categorical_variables = df.select_dtypes(include=['object']).columns.tolist()
+    all_datetime_variables = df.select_dtypes(include=['datetime64[ns]']).columns.tolist()
+    all_numerical_variables = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
     st.write("### 1D Statistics")
-    select_all = st.button("Select All")
+    col1, col2, col3, col4 = st.columns([0.15, 0.25, 0.25, 0.25])
+    with col1:
+        select_all = st.button("Select All")
+    with col2:
+        select_all_numerical = st.button("Select All Numerical")
+    with col3:
+        select_all_categorical = st.button("Select All Categorical")
+    with col4:
+        select_all_date = st.button("Select All Date")
+
+    selected_variables = st.multiselect("Select variables", all_variables, key="selected_variables")
 
     if select_all:
-        selected_variables = st.multiselect("Select variables", all_variables, default=all_variables)
-    else:
-        selected_variables = st.multiselect("Select variables", all_variables)
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = all_variables
+        st.rerun()
+    elif select_all_numerical:
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = all_numerical_variables
+        st.rerun()
+    elif select_all_categorical:
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = all_categorical_variables
+        st.rerun()
+    elif select_all_date:
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = all_datetime_variables
+        st.rerun()
 
     if selected_variables:
         # Generate statistics
