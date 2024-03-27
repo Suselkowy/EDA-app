@@ -1,18 +1,19 @@
 import pandas as pd
 import streamlit as st
 
+REPLACE_EMPTY_STRATEGIES = {
+    "object": ["Most Frequent", "Custom Value"],
+    "datetime64[ns]": ["Custom Value"],
+    "float64": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
+                "Custom Value"],
+    "int64": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
+              "Custom Value"]
+}
+
 
 def generate_empty(df, selected_variable):
     empty_values_count = df[selected_variable].isnull().sum()
     return empty_values_count
-
-
-REPLACE_EMPTY_STRATEGIES = {
-    "object": ["Most Frequent", "Custom Value"],
-    "datetime64[ns]": ["Custom Value"],
-    "numeric": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
-                "Custom Value"]
-}
 
 
 def replace_empty_values(df, selected_variable, method):
@@ -53,7 +54,12 @@ def get_missing_values(df):
     return result_df
 
 
-def data_wrangling():
+@st.cache_data
+def convert_df_to_csv(df):
+    return df.to_csv(index=False).encode('utf-8')
+
+
+def data_manipulation_page():
     if "reset_confirmation" not in st.session_state:
         st.session_state['reset_confirmation'] = False
 
@@ -70,7 +76,7 @@ def data_wrangling():
         st.session_state['primary_df'] = df
 
     def change_edited_df(df):
-        st.session_state['edited_df'] = df_editable
+        st.session_state['edited_df'] = df
 
     def replace_values(df, selected_variable, method):
         new_df = df.copy()
@@ -111,7 +117,6 @@ def data_wrangling():
         st.write("No columns with missing data")
     else:
         st.write(get_missing_values(df))
-
         selected_variable_fill = st.selectbox(f"Select variable to replace empty values",
                                               options=all_variables_with_empty_values,
                                               index=None, placeholder="Select variable", key="empty_selected")
@@ -119,18 +124,10 @@ def data_wrangling():
         if selected_variable_fill is not None:
             empty_values_count = generate_empty(df, selected_variable_fill)
             st.write(f"Number of empty values for {selected_variable_fill}: {empty_values_count}")
-            if df[selected_variable_fill].dtype == 'object':
-                method = st.selectbox("Select method to replace empty values:",
-                                      REPLACE_EMPTY_STRATEGIES.get('object'), index=None,
-                                      placeholder="Select method")
-            elif df[selected_variable_fill].dtype == 'datetime64[ns]':
-                method = st.selectbox("Select method to replace empty values:",
-                                      REPLACE_EMPTY_STRATEGIES.get('datetime64[ns]'), index=None,
-                                      placeholder="Select method")
-            else:
-                method = st.selectbox("Select method to replace empty values:",
-                                      REPLACE_EMPTY_STRATEGIES.get('numeric'), index=None,
-                                      placeholder="Select method")
+
+            method = st.selectbox("Select method to replace empty values:",
+                                  REPLACE_EMPTY_STRATEGIES[f"{df[selected_variable_fill].dtype}"], index=None,
+                                  placeholder="Select method")
 
             if method != "Custom Value":
                 st.button("Replace Empty Values", on_click=replace_values, args=[df, selected_variable_fill, method])
@@ -143,12 +140,9 @@ def data_wrangling():
     st.write(f"### Save dataset")
     if st.button('Save DataFrame to CSV'):
         filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
-
-        df.to_csv(filename, index=False)
-
-        with open(filename, 'rb') as f:
-            file_contents = f.read()
-        st.download_button(label='Click to download CSV file', data=file_contents, file_name=filename, mime='text/csv')
+        csv = convert_df_to_csv(df)
+        st.download_button(label='Click to download CSV file',
+                           data=csv, file_name=filename, mime='text/csv')
 
     st.write(f"### Reset dataset to initial values")
     if not st.session_state['reset_confirmation']:
