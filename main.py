@@ -7,6 +7,8 @@ from st_pages import show_pages, Page
 if "page" not in st.session_state:
     st.session_state['page'] = "loading"
 
+st.set_page_config(layout="wide")
+
 show_pages(
     [
         Page("main.py", "Loading"),
