@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 
 
@@ -9,7 +10,8 @@ def generate_empty(df, selected_variable):
 REPLACE_EMPTY_STRATEGIES = {
     "object": ["Most Frequent", "Custom Value"],
     "datetime64[ns]": ["Custom Value"],
-    "numeric": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation", "Custom Value"]
+    "numeric": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
+                "Custom Value"]
 }
 
 
@@ -44,6 +46,13 @@ def replace_empty_values(df, selected_variable, method):
     return df
 
 
+def get_missing_values(df):
+    missing_values_count = df.isnull().sum()
+    missing_values_df = missing_values_count[missing_values_count > 0]
+    result_df = pd.DataFrame({'Column Name': missing_values_df.index, 'Missing Values Count': missing_values_df.values})
+    return result_df
+
+
 def data_wrangling():
     if "reset_confirmation" not in st.session_state:
         st.session_state['reset_confirmation'] = False
@@ -58,21 +67,10 @@ def data_wrangling():
         st.toast("Dataset set to initial values")
 
     def change_primary_df(df):
-        print("primary changed")
         st.session_state['primary_df'] = df
 
-    def delete_session_variable(session_variable):
-        del st.session_state[session_variable]
-
-    st.write("# Data Manipulation")
-    if not st.session_state['edited']:
-        print("df changed to primary")
-        df = st.session_state['primary_df']
-        all_variables = df.columns.tolist()
-    else:
-        print("df changed to edited")
-        df = st.session_state['edited_df']
-        all_variables = df.columns.tolist()
+    def change_edited_df(df):
+        st.session_state['edited_df'] = df_editable
 
     def replace_values(df, selected_variable, method):
         new_df = df.copy()
@@ -81,6 +79,15 @@ def data_wrangling():
         st.session_state['edited'] = True
         del st.session_state['empty_selected']
         st.session_state['empty_selected'] = None
+
+    st.write("# Data Manipulation")
+    if not st.session_state['edited']:
+        df = st.session_state['primary_df']
+    else:
+        df = st.session_state['edited_df']
+
+    all_variables = df.columns.tolist()
+    all_variables_with_empty_values = df.columns[df.isnull().any()].tolist()
 
     st.write(f"### Data preview")
     st.write(df)
@@ -95,36 +102,43 @@ def data_wrangling():
         if changed_value != selected_variable:
             df_editable = df.rename(columns={selected_variable: changed_value})
             change_primary_df(df_editable)
-            st.session_state['edited_df'] = df_editable
+            change_edited_df(df_editable)
             st.rerun()
 
-    st.write(f"### Replace empty values of variable")
-    selected_variable_fill = st.selectbox(f"Select variable to replace empty", options=all_variables,
-                                          index=None, placeholder="Select variable", key="empty_selected")
+    st.write(f"### Replace missing data")
 
-    if selected_variable_fill is not None:
-        empty_values_count = generate_empty(df, selected_variable_fill)
-        st.write(f"Number of empty values for {selected_variable_fill}: {empty_values_count}")
-        if df[selected_variable_fill].dtype == 'object':
-            method = st.selectbox("Select method to replace empty values:",
-                                  REPLACE_EMPTY_STRATEGIES.get('object'), index=None,
-                                  placeholder="Select method")
-        elif df[selected_variable_fill].dtype == 'datetime64[ns]':
-            method = st.selectbox("Select method to replace empty values:",
-                                  REPLACE_EMPTY_STRATEGIES.get('datetime64[ns]'), index=None,
-                                  placeholder="Select method")
-        else:
-            method = st.selectbox("Select method to replace empty values:",
-                                  REPLACE_EMPTY_STRATEGIES.get('numeric'), index=None,
-                                  placeholder="Select method")
+    if len(all_variables_with_empty_values) == 0:
+        st.write("No columns with missing data")
+    else:
+        st.write(get_missing_values(df))
 
-        if method != "Custom Value":
-            st.button("Replace Empty Values", on_click=replace_values, args=[df, selected_variable_fill, method])
-        else:
-            custom_value = st.text_input("Enter custom value", key="custom_value")
-            if custom_value:
-                replace_values(df, selected_variable_fill, method)
-                st.rerun()
+        selected_variable_fill = st.selectbox(f"Select variable to replace empty values",
+                                              options=all_variables_with_empty_values,
+                                              index=None, placeholder="Select variable", key="empty_selected")
+
+        if selected_variable_fill is not None:
+            empty_values_count = generate_empty(df, selected_variable_fill)
+            st.write(f"Number of empty values for {selected_variable_fill}: {empty_values_count}")
+            if df[selected_variable_fill].dtype == 'object':
+                method = st.selectbox("Select method to replace empty values:",
+                                      REPLACE_EMPTY_STRATEGIES.get('object'), index=None,
+                                      placeholder="Select method")
+            elif df[selected_variable_fill].dtype == 'datetime64[ns]':
+                method = st.selectbox("Select method to replace empty values:",
+                                      REPLACE_EMPTY_STRATEGIES.get('datetime64[ns]'), index=None,
+                                      placeholder="Select method")
+            else:
+                method = st.selectbox("Select method to replace empty values:",
+                                      REPLACE_EMPTY_STRATEGIES.get('numeric'), index=None,
+                                      placeholder="Select method")
+
+            if method != "Custom Value":
+                st.button("Replace Empty Values", on_click=replace_values, args=[df, selected_variable_fill, method])
+            else:
+                custom_value = st.text_input("Enter custom value", key="custom_value")
+                if custom_value:
+                    replace_values(df, selected_variable_fill, method)
+                    st.rerun()
 
     st.write(f"### Save dataset")
     if st.button('Save DataFrame to CSV'):

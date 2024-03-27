@@ -1,13 +1,11 @@
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
 
 
 def generate_statistics(df, selected_variables):
     statistics = {}
     num = 1
-
     for var in selected_variables:
         if df[var].dtype == 'int64' or df[var].dtype == 'float64':
             statistics[num] = {
@@ -43,29 +41,10 @@ def generate_statistics(df, selected_variables):
     return statistics_df
 
 
-def generate_1d_plots(df, selected_variables, graph_type, **kwargs):
+def generate_1d_plots(df, selected_variables, graph_type):
     for var in selected_variables:
         if df[var].dtype == 'object':
             if graph_type == 'Bar Chart':
-                # filtered_df = df[df[var].isin(kwargs['selected'])]
-                # if filtered_df.empty:
-                #     fig = go.Figure()
-                #     fig.add_annotation(
-                #         x=0.5,
-                #         y=0.5,
-                #         text="Empty plot",
-                #         showarrow=False,
-                #         font=dict(
-                #             size=20,
-                #             color="white"
-                #         )
-                #     )
-                #     fig.update_layout(
-                #         xaxis=dict(visible=False),
-                #         yaxis=dict(visible=False),
-                #     )
-                #     st.plotly_chart(fig)
-                #     continue
                 filtered_df = df
                 fig = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index, y=filtered_df[var].value_counts().values,
                              labels={'x': var, 'y': 'Frequency'}, title=f"{var} Bar Chart")
@@ -99,7 +78,6 @@ def statistics():
     if not st.session_state['edited']:
         df = st.session_state['primary_df']
     else:
-        print("df changed to edited")
         df = st.session_state['edited_df']
     all_variables = df.columns.tolist()
     all_categorical_variables = df.select_dtypes(include=['object']).columns.tolist()
@@ -137,10 +115,8 @@ def statistics():
         st.rerun()
 
     if selected_variables:
-        # Generate statistics
         stats_df = generate_statistics(df, selected_variables)
 
-        # Display statistics
         st.write("Variable Statistics")
         st.write(stats_df)
 
@@ -160,14 +136,8 @@ def statistics():
     if selected_variable_plot:
         if df[selected_variable_plot].dtype == "object":
             graph_type = st.selectbox("Select graph type", ["Bar Chart", "Pie Chart", "Tree Map"])
-            # if graph_type == "Bar Chart":
-            #     all_values = df[selected_variable_plot].unique()
-            #
-            #     bar_chart_selected = st.multiselect("Select variables to show on plot", all_values, default=all_values,
-            #                                         key="bar_chart_selected")
-            #     kwargs['selected'] = bar_chart_selected
         else:
             graph_type = st.selectbox("Select graph type", ["Histogram", "Box Plot"])
 
         if graph_type:
-            generate_1d_plots(df, [selected_variable_plot], graph_type, **kwargs)
+            generate_1d_plots(df, [selected_variable_plot], graph_type)
