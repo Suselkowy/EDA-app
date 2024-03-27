@@ -2,6 +2,8 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
+from side_pages.data_manipulation import convert_df_to_csv
+
 
 def generate_statistics(df, selected_variables):
     statistics = {}
@@ -46,7 +48,8 @@ def generate_1d_plots(df, selected_variables, graph_type):
         if df[var].dtype == 'object':
             if graph_type == 'Bar Chart':
                 filtered_df = df
-                fig = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index, y=filtered_df[var].value_counts().values,
+                fig = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index,
+                             y=filtered_df[var].value_counts().values,
                              labels={'x': var, 'y': 'Frequency'}, title=f"{var} Bar Chart")
                 st.plotly_chart(fig)
             elif graph_type == 'Pie Chart':
@@ -74,7 +77,7 @@ def generate_1d_plots(df, selected_variables, graph_type):
                 st.plotly_chart(fig)
 
 
-def statistics():
+def statistics_page():
     if not st.session_state['edited']:
         df = st.session_state['primary_df']
     else:
@@ -97,22 +100,19 @@ def statistics():
 
     selected_variables = st.multiselect("Select variables", all_variables, key="selected_variables")
 
+    def overwrite_selected_variables(new_variables):
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = new_variables
+        st.rerun()
+
     if select_all:
-        del st.session_state['selected_variables']
-        st.session_state['selected_variables'] = all_variables
-        st.rerun()
+        overwrite_selected_variables(all_variables)
     elif select_all_numerical:
-        del st.session_state['selected_variables']
-        st.session_state['selected_variables'] = all_numerical_variables
-        st.rerun()
+        overwrite_selected_variables(all_numerical_variables)
     elif select_all_categorical:
-        del st.session_state['selected_variables']
-        st.session_state['selected_variables'] = all_categorical_variables
-        st.rerun()
+        overwrite_selected_variables(all_categorical_variables)
     elif select_all_date:
-        del st.session_state['selected_variables']
-        st.session_state['selected_variables'] = all_datetime_variables
-        st.rerun()
+        overwrite_selected_variables(all_datetime_variables)
 
     if selected_variables:
         stats_df = generate_statistics(df, selected_variables)
@@ -122,17 +122,13 @@ def statistics():
 
         if st.button("Save Statistics to CSV"):
             filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
-            stats_df.to_csv(filename, index=False)
-            with open(filename, 'rb') as f:
-                file_contents = f.read()
-            st.download_button(label='Click to download CSV file', data=file_contents, file_name=filename,
-                               mime='text/csv')
+            csv = convert_df_to_csv(df)
+            st.download_button(label='Click to download CSV file',
+                               data=csv, file_name=filename, mime='text/csv')
 
     st.write("### 1D plots")
-
     selected_variable_plot = st.selectbox(f"Select variable which plot you want to generate", options=all_variables,
                                           index=None, placeholder='Select plot')
-    kwargs = {}
     if selected_variable_plot:
         if df[selected_variable_plot].dtype == "object":
             graph_type = st.selectbox("Select graph type", ["Bar Chart", "Pie Chart", "Tree Map"])
