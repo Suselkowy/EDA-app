@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 options = ['int64', 'float64', 'object', 'datetime64[ns]', 'Delete']
+
 
 def main():
     st.title("CSV File Viewer")
@@ -38,4 +38,3 @@ def main():
             st.session_state['page'] = 'data_manipulation'
 
         st.button("Go to Data Analysis", on_click=click)
-

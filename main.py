@@ -2,7 +2,7 @@ import streamlit as st
 from side_pages.data_loading import main
 from side_pages.data_manipulation import data_manipulation_page
 from side_pages.statistics import statistics_page
-from st_pages import show_pages, hide_pages, Page
+from st_pages import show_pages, Page
 
 if "page" not in st.session_state:
     st.session_state['page'] = "loading"
