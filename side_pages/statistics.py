@@ -1,5 +1,6 @@
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 
@@ -42,9 +43,45 @@ def generate_statistics(df, selected_variables):
     return statistics_df
 
 
-def generate_1d_plots(df, selected_variables, graph_type):
+def generate_1d_plots(df, selected_variables, graph_type, **kwargs):
     for var in selected_variables:
-        st.write(f"### {var} Distribution")
+        if df[var].dtype == 'object':
+            if graph_type == 'Bar Chart':
+                # filtered_df = df[df[var].isin(kwargs['selected'])]
+                # if filtered_df.empty:
+                #     fig = go.Figure()
+                #     fig.add_annotation(
+                #         x=0.5,
+                #         y=0.5,
+                #         text="Empty plot",
+                #         showarrow=False,
+                #         font=dict(
+                #             size=20,
+                #             color="white"
+                #         )
+                #     )
+                #     fig.update_layout(
+                #         xaxis=dict(visible=False),
+                #         yaxis=dict(visible=False),
+                #     )
+                #     st.plotly_chart(fig)
+                #     continue
+                filtered_df = df
+                fig = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index, y=filtered_df[var].value_counts().values,
+                             labels={'x': var, 'y': 'Frequency'}, title=f"{var} Bar Chart")
+                st.plotly_chart(fig)
+            elif graph_type == 'Pie Chart':
+                fig = px.pie(df[var].value_counts(), values=df[var].value_counts().values,
+                             names=df[var].value_counts().index,
+                             title=f"{var} Pie Chart")
+                st.plotly_chart(fig)
+            elif graph_type == 'Tree Map':
+                value_counts = df[var].value_counts().reset_index()
+                value_counts.columns = ['value', 'count']
+                fig = px.treemap(value_counts, path=['value'], values='count')
+                fig.update_layout(title='Treemap of Unique Values Counts in Column')
+                st.plotly_chart(fig)
+
         if graph_type == 'Histogram':
             if df[var].dtype == 'int64' or df[var].dtype == 'float64':
                 fig = px.histogram(df, x=var, title=f"{var} Histogram")
@@ -52,20 +89,9 @@ def generate_1d_plots(df, selected_variables, graph_type):
             elif df[var].dtype == 'datetime64[ns]':
                 fig = px.histogram(df, x=var, title=f"{var} Histogram")
                 st.plotly_chart(fig)
-        elif graph_type == 'Bar Chart':
-            if df[var].dtype == 'object':
-                fig = px.bar(df[var].value_counts(), x=df[var].value_counts().index, y=df[var].value_counts().values,
-                             labels={'x': var, 'y': 'Frequency'}, title=f"{var} Bar Chart")
-                st.plotly_chart(fig)
         elif graph_type == 'Box Plot':
             if df[var].dtype == 'int64' or df[var].dtype == 'float64':
                 fig = px.box(df, y=var, title=f"{var} Box Plot")
-                st.plotly_chart(fig)
-        elif graph_type == 'Pie Chart':
-            if df[var].dtype == 'object':
-                fig = px.pie(df[var].value_counts(), values=df[var].value_counts().values,
-                             names=df[var].value_counts().index,
-                             title=f"{var} Pie Chart")
                 st.plotly_chart(fig)
 
 
@@ -130,7 +156,18 @@ def statistics():
 
     selected_variable_plot = st.selectbox(f"Select variable which plot you want to generate", options=all_variables,
                                           index=None, placeholder='Select plot')
-
+    kwargs = {}
     if selected_variable_plot:
-        graph_type = st.selectbox("Select graph type", ["Histogram", "Bar Chart", "Box Plot", "Pie Chart"])
-        generate_1d_plots(df, [selected_variable_plot], graph_type)
+        if df[selected_variable_plot].dtype == "object":
+            graph_type = st.selectbox("Select graph type", ["Bar Chart", "Pie Chart", "Tree Map"])
+            # if graph_type == "Bar Chart":
+            #     all_values = df[selected_variable_plot].unique()
+            #
+            #     bar_chart_selected = st.multiselect("Select variables to show on plot", all_values, default=all_values,
+            #                                         key="bar_chart_selected")
+            #     kwargs['selected'] = bar_chart_selected
+        else:
+            graph_type = st.selectbox("Select graph type", ["Histogram", "Box Plot"])
+
+        if graph_type:
+            generate_1d_plots(df, [selected_variable_plot], graph_type, **kwargs)
