@@ -2,12 +2,12 @@ import pandas as pd
 import streamlit as st
 
 REPLACE_EMPTY_STRATEGIES = {
-    "object": ["Most Frequent", "Custom Value"],
-    "datetime64[ns]": ["Custom Value"],
+    "object": ["Most Frequent", "Custom Value", "Drop Rows"],
+    "datetime64[ns]": ["Custom Value", "Drop Rows"],
     "float64": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
-                "Custom Value"],
+                "Custom Value", "Drop Rows"],
     "int64": ["Mean", "Median", "Most Frequent", "Zero", "Forward Fill", "Backward Fill", "Interpolation",
-              "Custom Value"]
+              "Custom Value", "Drop Rows"]
 }
 
 
@@ -17,33 +17,28 @@ def generate_empty(df, selected_variable):
 
 
 def replace_empty_values(df, selected_variable, method):
-    if df[selected_variable].dtype == 'object':
-        if method == "Most Frequent":
-            most_frequent_value = df[selected_variable].mode()[0]
-            df[selected_variable].fillna(most_frequent_value, inplace=True)
-        elif method == "Custom Value":
-            df[selected_variable].fillna(st.session_state['custom_value'], inplace=True)
-    elif df[selected_variable].dtype == 'datetime64[ns]':
-        if method == "Custom Value":
-            df[selected_variable].fillna(st.session_state['custom_date_value'], inplace=True)
-    else:
-        if method == "Mean":
-            df[selected_variable].fillna(df[selected_variable].mean(), inplace=True)
-        elif method == "Median":
-            df[selected_variable].fillna(df[selected_variable].median(), inplace=True)
-        elif method == "Most Frequent":
-            most_frequent_value = df[selected_variable].mode()[0]
-            df[selected_variable].fillna(most_frequent_value, inplace=True)
-        elif method == "Zero":
-            df[selected_variable].fillna(0, inplace=True)
-        elif method == "Forward Fill":
-            df[selected_variable].fillna(method='ffill', inplace=True)
-        elif method == "Backward Fill":
-            df[selected_variable].fillna(method='bfill', inplace=True)
-        elif method == "Interpolation":
-            df[selected_variable].interpolate(inplace=True)
-        elif method == "Custom Value":
-            df[selected_variable].fillna(st.session_state['custom_value'], inplace=True)
+    if method == "Most Frequent":
+        most_frequent_value = df[selected_variable].mode()[0]
+        return df[selected_variable].fillna(most_frequent_value)
+    if method == "Custom Value":
+        return df[selected_variable].fillna(st.session_state['custom_value'])
+    if method == "Mean":
+        return df[selected_variable].fillna(df[selected_variable].mean())
+    if method == "Median":
+        return df[selected_variable].fillna(df[selected_variable].median())
+    if method == "Most Frequent":
+        most_frequent_value = df[selected_variable].mode()[0]
+        return df[selected_variable].fillna(most_frequent_value)
+    if method == "Zero":
+        return df[selected_variable].fillna(0)
+    if method == "Forward Fill":
+        return df[selected_variable].fillna(method='ffill')
+    if method == "Backward Fill":
+        return df[selected_variable].fillna(method='bfill')
+    if method == "Interpolation":
+        return df[selected_variable].interpolate()
+    if method == "Drop Rows":
+        return df.dropna(subset=[selected_variable])
     return df
 
 
@@ -79,9 +74,8 @@ def data_manipulation_page():
         st.session_state['edited_df'] = df
 
     def replace_values(df, selected_variable, method):
-        new_df = df.copy()
-        new_df = replace_empty_values(new_df, selected_variable, method)
-        st.session_state['edited_df'] = new_df
+        edited_df = replace_empty_values(df, selected_variable, method)
+        st.session_state['edited_df'] = edited_df
         st.session_state['edited'] = True
         del st.session_state['empty_selected']
         st.session_state['empty_selected'] = None
