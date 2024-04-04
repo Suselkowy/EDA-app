@@ -1,3 +1,4 @@
+from unicodedata import numeric
 import streamlit as st
 import plotly.express as px
 import pandas as pd
@@ -43,17 +44,28 @@ def generate_statistics(df, selected_variables):
     return statistics_df
 
 def plot_categorical_categorical(df, xs, ys):
-    return
+    if xs == ys: return
+    grouped_df = df.groupby([xs, ys]).size().reset_index(name='count')
+
+    fig = px.bar(grouped_df, x=xs, y='count', color=ys, title=f'Stacked Bar Chart of {xs} by {ys}', barmode='stack')
+    st.plotly_chart(fig, use_container_width=True)
+
+    fig = px.density_heatmap(grouped_df, x=xs, y=ys, z='count', title=f"Heatmap of {xs} by {ys}")
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_numerical_numerical(df, xs, ys):
-    fig = px.scatter(df, x=xs, y=ys, title=f"Scatter Plot of {ys} vs {xs}")
+    fig = px.scatter(df, x=xs, y=ys, title=f"Scatter plot of {xs} vs {ys}")
     st.plotly_chart(fig, use_container_width=True)
 
     fig = px.density_heatmap(df, x=xs, y=ys, title=f"Heatmap of {xs} vs {ys}")
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_categorical_numerical(df, categorical, numerical):
-    return
+    fig = px.strip(df, x=categorical, y=numerical, title=f"Strip plot of {categorical} vs {numerical}")
+    st.plotly_chart(fig, use_container_width=True)
+
+    fig = px.box(df, x=categorical, y=numerical, title=f"Box plot of {categorical} vs {numerical}")
+    st.plotly_chart(fig, use_container_width=True)
 
 def generate_2d_plots(df, selected_variables):
     xs, ys = selected_variables
@@ -63,11 +75,9 @@ def generate_2d_plots(df, selected_variables):
     
     if x_type == "categorical" and y_type == "categorical":
         plot_categorical_categorical(df, xs, ys)
-        graph_type = st.selectbox("Select graph type", ["Clustered Bar Chart", "Stacked Bar Chart", "Heatmap"])
     elif x_type == "numerical" and y_type == "numerical":
         plot_numerical_numerical(df, xs, ys)
     elif x_type == "numerical" and y_type == "categorical":
-        graph_type = st.selectbox("Select graph type", ["Grouped Bar Graph", "Stacked Bar Graph", "Boxplot"])
         plot_categorical_numerical(df, categorical=xs, numerical=ys)
     else:
         plot_categorical_numerical(df, categorical=ys, numerical=xs)
@@ -81,9 +91,9 @@ def statistics2d_page():
 
     st.write("### 2D plots")
     selected_variable_plot_a = st.selectbox(f"Select first variable to plot", options=all_variables,
-                                          index=None, placeholder='Select first variable', key="a")
-    selected_variable_plot_b = st.selectbox(f"Select first variable to plot", options=all_variables,
-                                          index=None, placeholder='Select second variable', key="b")
+                                          index=None, key="a")
+    selected_variable_plot_b = st.selectbox(f"Select second variable to plot", options=all_variables,
+                                          index=None, key="b")
 
     if selected_variable_plot_a and selected_variable_plot_b:
         generate_2d_plots(df, [selected_variable_plot_a, selected_variable_plot_b])
