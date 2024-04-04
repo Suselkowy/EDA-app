@@ -89,7 +89,7 @@ def generate_1d_plots(df, selected_variables):
             st.plotly_chart(fig)
 
 
-def statistics_page():
+def statistics_1d_page():
     if not st.session_state['edited']:
         df = st.session_state['primary_df']
     else:
