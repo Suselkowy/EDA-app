@@ -1,23 +1,20 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 options = ['int64', 'float64', 'object', 'datetime64[ns]', 'Delete']
+
 
 def main():
     st.title("CSV File Viewer")
     st.session_state['edited'] = False
-    # Upload CSV file
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
     if 'current_page' not in st.session_state:
         st.session_state['current_page'] = 'main'
 
     if uploaded_file is not None:
-        # Load CSV data into a DataFrame
         df = pd.read_csv(uploaded_file)
 
-        # Display DataFrame
         st.write("### Raw Data")
         st.write(df)
 
@@ -38,4 +35,3 @@ def main():
             st.session_state['page'] = 'data_manipulation'
 
         st.button("Go to Data Analysis", on_click=click)
-

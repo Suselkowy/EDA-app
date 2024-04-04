@@ -43,38 +43,50 @@ def generate_statistics(df, selected_variables):
     return statistics_df
 
 
-def generate_1d_plots(df, selected_variables, graph_type):
+def generate_1d_plots(df, selected_variables):
     for var in selected_variables:
+        st.title(var)
         if df[var].dtype == 'object':
-            if graph_type == 'Bar Chart':
+            unique_value = df[var].unique()
+            if len(unique_value) > 50:
+                show_all = st.checkbox("Variable have more than 40 unique values, are you sure, that you want to "
+                                       "generate plots ? It can slow the app significantly.", value=False, key=f"checkbox_{var}")
+            else:
+                show_all = True
+
+            if show_all:
                 filtered_df = df
-                fig = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index,
+                bar = px.bar(filtered_df[var].value_counts(), x=filtered_df[var].value_counts().index,
                              y=filtered_df[var].value_counts().values,
                              labels={'x': var, 'y': 'Frequency'}, title=f"{var} Bar Chart")
-                st.plotly_chart(fig)
-            elif graph_type == 'Pie Chart':
-                fig = px.pie(df[var].value_counts(), values=df[var].value_counts().values,
+                pie = px.pie(df[var].value_counts(), values=df[var].value_counts().values,
                              names=df[var].value_counts().index,
                              title=f"{var} Pie Chart")
-                st.plotly_chart(fig)
-            elif graph_type == 'Tree Map':
                 value_counts = df[var].value_counts().reset_index()
                 value_counts.columns = ['value', 'count']
-                fig = px.treemap(value_counts, path=['value'], values='count')
-                fig.update_layout(title='Treemap of Unique Values Counts in Column')
-                st.plotly_chart(fig)
+                tree = px.treemap(value_counts, path=['value'], values='count')
+                tree.update_layout(title='Treemap of Unique Values Counts in Column')
 
-        if graph_type == 'Histogram':
-            if df[var].dtype == 'int64' or df[var].dtype == 'float64':
-                fig = px.histogram(df, x=var, title=f"{var} Histogram")
-                st.plotly_chart(fig)
-            elif df[var].dtype == 'datetime64[ns]':
-                fig = px.histogram(df, x=var, title=f"{var} Histogram")
-                st.plotly_chart(fig)
-        elif graph_type == 'Box Plot':
-            if df[var].dtype == 'int64' or df[var].dtype == 'float64':
-                fig = px.box(df, y=var, title=f"{var} Box Plot")
-                st.plotly_chart(fig)
+                col1_1, col2_1 = st.columns(2)
+                col1_2, col2_2 = st.columns(2)
+
+                col1_1.plotly_chart(bar, use_container_width=True)
+                col2_1.plotly_chart(pie, use_container_width=True)
+                col1_2.plotly_chart(tree, use_container_width=True)
+
+        elif df[var].dtype == 'int64' or df[var].dtype == 'float':
+
+            hist = px.histogram(df, x=var, title=f"{var} Histogram")
+            box = px.box(df, y=var, title=f"{var} Box Plot")
+
+            col1, col2 = st.columns(2)
+
+            col1.plotly_chart(hist, use_container_width=True)
+            col2.plotly_chart(box, use_container_width=True)
+
+        else:
+            fig = px.histogram(df, x=var, title=f"{var} Histogram")
+            st.plotly_chart(fig)
 
 
 def statistics_page():
@@ -126,14 +138,4 @@ def statistics_page():
             st.download_button(label='Click to download CSV file',
                                data=csv, file_name=filename, mime='text/csv')
 
-    st.write("### 1D plots")
-    selected_variable_plot = st.selectbox(f"Select variable which plot you want to generate", options=all_variables,
-                                          index=None, placeholder='Select plot')
-    if selected_variable_plot:
-        if df[selected_variable_plot].dtype == "object":
-            graph_type = st.selectbox("Select graph type", ["Bar Chart", "Pie Chart", "Tree Map"])
-        else:
-            graph_type = st.selectbox("Select graph type", ["Histogram", "Box Plot"])
-
-        if graph_type:
-            generate_1d_plots(df, [selected_variable_plot], graph_type)
+        generate_1d_plots(df, selected_variables)
