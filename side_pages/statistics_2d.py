@@ -5,43 +5,27 @@ import pandas as pd
 
 from side_pages.data_manipulation import convert_df_to_csv
 
-
 def generate_statistics(df, selected_variables):
-    statistics = {}
-    num = 1
+    if len(selected_variables)==0: return
+    var_type = df[selected_variables[0]].dtype
     for var in selected_variables:
-        if df[var].dtype == 'int64' or df[var].dtype == 'float64':
-            statistics[num] = {
-                'Variable': var,
-                'Mean': df[var].mean(),
-                'Median': df[var].median(),
-                'Std Dev': df[var].std(),
-                'Min': df[var].min(),
-                'Max': df[var].max(),
-            }
-            num += 1
-        elif df[var].dtype == 'object':
-            unique_values = df[var].value_counts()
-            total_count = len(df[var])
-            for value, count in unique_values.items():
-                stats = {
-                    'Variable': var,
-                    'Value': value,
-                    'Count': count,
-                    'Count Percentage': (count / total_count) * 100
-                }
-                statistics[num] = stats
-                num += 1
-        elif df[var].dtype == 'datetime64[ns]':
-            statistics[num] = {
-                'Variable': var,
-                'Earliest Date': df[var].min(),
-                'Latest Date': df[var].max(),
-            }
-            num += 1
-
-    statistics_df = pd.DataFrame(statistics).transpose()
-    return statistics_df
+        if var_type in ['int64', 'float64'] and df[var].dtype not in ['int64', 'float64']:
+            return
+        if var_type == 'object' and df[var].dtype != 'object':
+            return
+        
+    if var_type in ['int64', 'float64']:
+        corr = df.loc[:,selected_variables].corr()
+        fig = px.imshow(corr,
+                        text_auto=True,
+                        aspect="auto",
+                        color_continuous_scale='RdBu_r',
+                        labels=dict(color="Correlation"),
+                        )
+        fig.update_layout(coloraxis_colorbar=dict(title="Correlation", tickvals=[-1, -0.5, 0, 0.5, 1]),
+                        title_text='Correlation Matrix')
+        st.plotly_chart(fig, theme="streamlit")
+        return
 
 def plot_categorical_categorical(df, xs, ys):
     if xs == ys: return
@@ -88,6 +72,48 @@ def statistics_2d_page():
     else:
         df = st.session_state['edited_df']
     all_variables = df.columns.tolist()
+    all_categorical_variables = df.select_dtypes(include=['object']).columns.tolist()
+    all_datetime_variables = df.select_dtypes(include=['datetime64[ns]']).columns.tolist()
+    all_numerical_variables = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+
+    st.write("### 2D Statistics")
+    col1, col2, col3, col4 = st.columns([0.15, 0.25, 0.25, 0.25])
+    with col1:
+        select_all = st.button("Select All")
+    with col2:
+        select_all_numerical = st.button("Select All Numerical")
+    with col3:
+        select_all_categorical = st.button("Select All Categorical")
+    with col4:
+        select_all_date = st.button("Select All Date")
+
+    selected_variables = st.multiselect("Select variables", all_variables, key="selected_variables")
+
+    def overwrite_selected_variables(new_variables):
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = new_variables
+        st.rerun()
+
+    if select_all:
+        overwrite_selected_variables(all_variables)
+    elif select_all_numerical:
+        overwrite_selected_variables(all_numerical_variables)
+    elif select_all_categorical:
+        overwrite_selected_variables(all_categorical_variables)
+    elif select_all_date:
+        overwrite_selected_variables(all_datetime_variables)
+
+    if selected_variables:
+        stats_df = generate_statistics(df, selected_variables)
+
+        st.write("Variable Statistics")
+        st.write(stats_df)
+
+        if st.button("Save Statistics to CSV"):
+            filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
+            csv = convert_df_to_csv(df)
+            st.download_button(label='Click to download CSV file',
+                               data=csv, file_name=filename, mime='text/csv')
 
     st.write("### 2D plots")
     selected_variable_plot_a = st.selectbox(f"Select first variable to plot", options=all_variables,
