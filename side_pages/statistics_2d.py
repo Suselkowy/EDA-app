@@ -105,6 +105,7 @@ def generate_2d_plots(df, selected_variables):
     else:
         plot_categorical_numerical(df, categorical=ys, numerical=xs)
 
+
 def statistics_2d_page():
     if not st.session_state['edited']:
         df = st.session_state['primary_df']
