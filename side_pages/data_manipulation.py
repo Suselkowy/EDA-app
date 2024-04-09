@@ -133,11 +133,49 @@ def data_manipulation_page():
                     st.rerun()
 
     st.write(f"### Save dataset")
-    if st.button('Save DataFrame to CSV'):
+    if st.button('Save DataFrame to CSV' , key="save_all"):
         filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
         csv = convert_df_to_csv(df)
         st.download_button(label='Click to download CSV file',
-                           data=csv, file_name=filename, mime='text/csv')
+                           data=csv, file_name=filename, mime='text/csv', key="download_all")
+
+    st.write(f"### Save dataset with selected columns")
+    all_variables = df.columns.tolist()
+    all_categorical_variables = df.select_dtypes(include=['object']).columns.tolist()
+    all_datetime_variables = df.select_dtypes(include=['datetime64[ns]']).columns.tolist()
+    all_numerical_variables = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    col1, col2, col3, col4 = st.columns([0.15, 0.25, 0.25, 0.25])
+    with col1:
+        select_all = st.button("Select All")
+    with col2:
+        select_all_numerical = st.button("Select All Numerical")
+    with col3:
+        select_all_categorical = st.button("Select All Categorical")
+    with col4:
+        select_all_date = st.button("Select All Date")
+
+    selected_variables = st.multiselect("Select variables", all_variables, key="selected_variables")
+
+    def overwrite_selected_variables(new_variables):
+        del st.session_state['selected_variables']
+        st.session_state['selected_variables'] = new_variables
+        st.rerun()
+
+    if select_all:
+        overwrite_selected_variables(all_variables)
+    elif select_all_numerical:
+        overwrite_selected_variables(all_numerical_variables)
+    elif select_all_categorical:
+        overwrite_selected_variables(all_categorical_variables)
+    elif select_all_date:
+        overwrite_selected_variables(all_datetime_variables)
+
+    if st.button('Save DataFrame to CSV', key="save_selected"):
+        new_df = df.loc[:, selected_variables]
+        filename = st.text_input('Enter a filename for the CSV file:', 'data.csv')
+        csv = convert_df_to_csv(new_df)
+        st.download_button(label='Click to download CSV file',
+                           data=csv, file_name=filename, mime='text/csv', key="download_selected")
 
     st.write(f"### Reset dataset to initial values")
     if not st.session_state['reset_confirmation']:
