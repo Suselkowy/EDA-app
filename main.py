@@ -3,7 +3,7 @@ from side_pages.data_loading import main
 from side_pages.data_manipulation import data_manipulation_page
 from side_pages.statistics_1d import statistics_1d_page
 from side_pages.statistics_2d import statistics_2d_page
-from st_pages import show_pages, hide_pages, Page
+from st_pages import show_pages, Page
 
 if "page" not in st.session_state:
     st.session_state['page'] = "loading"
@@ -26,6 +26,8 @@ def show_side_panel():
 
 def switch_page(page: str):
     st.session_state['page'] = page
+    st.session_state['new_page'] = True
+
 
 if st.session_state['page'] == "loading":
     main()

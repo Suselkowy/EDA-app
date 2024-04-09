@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-
+from utils import scroll_to_top
 from side_pages.data_manipulation import convert_df_to_csv
 
 
@@ -139,3 +139,6 @@ def statistics_1d_page():
                                data=csv, file_name=filename, mime='text/csv')
 
         generate_1d_plots(df, selected_variables)
+
+    if st.session_state['new_page']:
+        scroll_to_top()

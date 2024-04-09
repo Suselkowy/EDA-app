@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+from utils import scroll_to_top
 
 REPLACE_EMPTY_STRATEGIES = {
     "object": ["Most Frequent", "Custom Value", "Drop Rows"],
@@ -145,3 +146,6 @@ def data_manipulation_page():
         st.error("Are you sure, that you want to reset dataset to initial values?")
         st.button("Proceed", on_click=reset_edited_state)
         st.button("Cancel", on_click=change_reset_state, args=[False])
+
+    if st.session_state['new_page']:
+        scroll_to_top()
