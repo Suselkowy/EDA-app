@@ -1,10 +1,10 @@
-from unicodedata import numeric
 import streamlit as st
 import plotly.express as px
+from utils import scroll_to_top
 import pandas as pd
 from scipy.stats import chi2_contingency, kruskal
-
 from side_pages.data_manipulation import convert_df_to_csv
+
 
 def generate_statistics(df, selected_variables):
     if len(selected_variables)==0: return
@@ -15,7 +15,7 @@ def generate_statistics(df, selected_variables):
             sel_categorical.append(var)
         elif df[var].dtype in ['int64', 'float64']:
             sel_numerical.append(var)
-        
+
     if len(sel_numerical) > 1:
         corr = df.loc[:,sel_numerical].corr()
         fig = px.imshow(corr,
@@ -27,8 +27,8 @@ def generate_statistics(df, selected_variables):
         fig.update_layout(coloraxis_colorbar=dict(title="Correlation", tickvals=[-1, -0.5, 0, 0.5, 1]),
                         title_text='Correlation Matrix')
         st.plotly_chart(fig, theme="streamlit")
-    
-        
+
+
     if len(sel_categorical)>1:
         results = []
         for i, var1 in enumerate(sel_categorical):
@@ -57,9 +57,9 @@ def generate_statistics(df, selected_variables):
                     'Test Type': 'Kruskal-Wallis',
                     'Statistic': stat,
                     'p-value': p_value,
-                    'Degrees of Freedom': len(groups) - 1  
+                    'Degrees of Freedom': len(groups) - 1
                 })
-    
+
         results_df = pd.DataFrame(results)
         st.dataframe(results_df, use_container_width=True, hide_index=True)
     return
@@ -151,3 +151,6 @@ def statistics_2d_page():
 
     if selected_variable_plot_a and selected_variable_plot_b:
         generate_2d_plots(df, [selected_variable_plot_a, selected_variable_plot_b])
+
+    if st.session_state['new_page']:
+        scroll_to_top()

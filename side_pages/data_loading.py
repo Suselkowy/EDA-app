@@ -40,6 +40,7 @@ def main():
         def click():
             st.session_state['primary_df'] = new_df
             st.session_state['edited'] = False
+            st.session_state['new_page'] = True
             st.session_state['page'] = 'data_manipulation'
 
         st.button("Go to Data Analysis", on_click=click)
