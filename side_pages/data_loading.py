@@ -28,7 +28,7 @@ def main():
         st.write(df)
     
         for col in df.columns:
-            if df.dtypes[col] == "object" and type(df[col][0]) == 'str' and re.match(r'((\d{4})[-,\.](\d{2})[-,\.](\d{2})( (\d{2}):(\d{2}):(\d{2}))?)|((\d{2})[-,\.](\d{2})[-,\.](\d{4})( (\d{2}):(\d{2})(:(\d{02}))?)?)', df[col][0].strip()) is not None:
+            if df.dtypes[col] == "object" and isinstance(df[col][0], str) and re.match(r'((\d{4})[-,\.](\d{2})[-,\.](\d{2})( (\d{2}):(\d{2}):(\d{2}))?)|((\d{2})[-,\.](\d{2})[-,\.](\d{4})( (\d{2}):(\d{2})(:(\d{02}))?)?)', df[col][0].strip()) is not None:
                     df[col] = df[col].astype('datetime64[ns]')            
         new_df = df.copy()
 
