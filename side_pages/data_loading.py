@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 options = ['int64', 'float64', 'object', 'datetime64[ns]', 'Delete']
 
@@ -25,10 +26,14 @@ def main():
 
         st.write("### Raw Data")
         st.write(df)
-
+    
+        for col in df.columns:
+            if df.dtypes[col] == "object" and re.match(r'((\d{4})[-,\.](\d{2})[-,\.](\d{2})( (\d{2}):(\d{2}):(\d{2}))?)|((\d{2})[-,\.](\d{2})[-,\.](\d{4})( (\d{2}):(\d{2})(:(\d{02}))?)?)', df[col][0].strip()) is not None:
+                    df[col] = df[col].astype('datetime64[ns]')            
         new_df = df.copy()
 
         for col in df.columns:
+                        
             new_dtype = st.selectbox(f"Select data type for column '{col}'", options=options,
                                      index=options.index(f'{df.dtypes[col]}'))
             if new_dtype != df.dtypes[col]:
