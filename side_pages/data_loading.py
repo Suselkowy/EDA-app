@@ -1,29 +1,39 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import re
 
 options = ['int64', 'float64', 'object', 'datetime64[ns]', 'Delete']
+
 
 def main():
     st.title("CSV File Viewer")
     st.session_state['edited'] = False
-    # Upload CSV file
+    selected_separator = st.selectbox("Select separator:", [',', ';'],
+                                      index=0, placeholder="Select separator",
+                                      key='selected_separator')
+
+    selected_decimal = st.selectbox("Select decimal:", ['.', ','],
+                                    index=0, placeholder="Select decimal",
+                                    key='selected_decimal')
+
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
     if 'current_page' not in st.session_state:
         st.session_state['current_page'] = 'main'
 
     if uploaded_file is not None:
-        # Load CSV data into a DataFrame
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(uploaded_file, sep=selected_separator, decimal=selected_decimal)
 
-        # Display DataFrame
         st.write("### Raw Data")
         st.write(df)
-
+    
+        for col in df.columns:
+            if df.dtypes[col] == "object" and re.match(r'((\d{4})[-,\.](\d{2})[-,\.](\d{2})( (\d{2}):(\d{2}):(\d{2}))?)|((\d{2})[-,\.](\d{2})[-,\.](\d{4})( (\d{2}):(\d{2})(:(\d{02}))?)?)', df[col][0].strip()) is not None:
+                    df[col] = df[col].astype('datetime64[ns]')            
         new_df = df.copy()
 
         for col in df.columns:
+                        
             new_dtype = st.selectbox(f"Select data type for column '{col}'", options=options,
                                      index=options.index(f'{df.dtypes[col]}'))
             if new_dtype != df.dtypes[col]:
@@ -35,7 +45,7 @@ def main():
         def click():
             st.session_state['primary_df'] = new_df
             st.session_state['edited'] = False
+            st.session_state['new_page'] = True
             st.session_state['page'] = 'data_manipulation'
 
         st.button("Go to Data Analysis", on_click=click)
-
