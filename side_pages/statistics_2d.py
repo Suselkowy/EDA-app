@@ -101,9 +101,9 @@ def generate_2d_plots(df, selected_variables):
     elif x_type == "numerical" and y_type == "numerical":
         plot_numerical_numerical(df, xs, ys)
     elif x_type == "numerical" and y_type == "categorical":
-        plot_categorical_numerical(df, categorical=xs, numerical=ys)
-    else:
         plot_categorical_numerical(df, categorical=ys, numerical=xs)
+    else:
+        plot_categorical_numerical(df, categorical=xs, numerical=ys)
 
 
 def statistics_2d_page():
