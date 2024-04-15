@@ -18,28 +18,26 @@ def generate_empty(df, selected_variable):
 
 
 def replace_empty_values(df, selected_variable, method):
+    df = df.copy()
     if method == "Most Frequent":
         most_frequent_value = df[selected_variable].mode()[0]
-        return df[selected_variable].fillna(most_frequent_value)
+        df[selected_variable].fillna(most_frequent_value,inplace=True)
     if method == "Custom Value":
-        return df[selected_variable].fillna(st.session_state['custom_value'])
+        df[selected_variable].fillna(st.session_state['custom_value'],inplace=True)
     if method == "Mean":
-        return df[selected_variable].fillna(df[selected_variable].mean())
+        df[selected_variable].fillna(df[selected_variable].mean(),inplace=True)
     if method == "Median":
-        return df[selected_variable].fillna(df[selected_variable].median())
-    if method == "Most Frequent":
-        most_frequent_value = df[selected_variable].mode()[0]
-        return df[selected_variable].fillna(most_frequent_value)
+        df[selected_variable].fillna(df[selected_variable].median(),inplace=True)
     if method == "Zero":
-        return df[selected_variable].fillna(0)
+        df[selected_variable].fillna(0,inplace=True)
     if method == "Forward Fill":
-        return df[selected_variable].fillna(method='ffill')
+        df[selected_variable].fillna(method='ffill',inplace=True)
     if method == "Backward Fill":
-        return df[selected_variable].fillna(method='bfill')
+        df[selected_variable].fillna(method='bfill',inplace=True)
     if method == "Interpolation":
-        return df[selected_variable].interpolate()
+        df[selected_variable].interpolate(inplace=True)
     if method == "Drop Rows":
-        return df.dropna(subset=[selected_variable])
+        df.dropna(subset=[selected_variable],inplace=True)
     return df
 
 
